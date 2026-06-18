@@ -78,3 +78,7 @@ For GitHub Pages, publish the repository root so `index.html` and `vendor/` are 
 PastePad uses PDF.js for browser-side PDF rendering. The PDF.js files are bundled locally under `vendor/` so the app can run without a backend server.
 
 No user files are uploaded to a server by the app itself. Files are read and rendered locally in the browser.
+
+## License
+
+MIT License. See [LICENSE](LICENSE).
