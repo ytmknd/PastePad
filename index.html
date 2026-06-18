@@ -1,0 +1,2091 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PastePad</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #eef1f4;
+      --panel: #ffffff;
+      --text: #17202a;
+      --muted: #667085;
+      --line: #d7dde5;
+      --accent: #1664d9;
+      --accent-dark: #0d4eaf;
+      --danger: #be2d35;
+      --shadow: 0 16px 42px rgba(24, 36, 54, .16);
+      font-family: "Yu Gothic UI", "Meiryo", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      overflow: hidden;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    button,
+    select,
+    input {
+      font: inherit;
+    }
+
+    .app {
+      display: grid;
+      grid-template-columns: 300px 1fr;
+      height: 100%;
+      min-width: 860px;
+    }
+
+    .sidebar {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      padding: 18px;
+      background: var(--panel);
+      border-right: 1px solid var(--line);
+      overflow-y: auto;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      min-height: 34px;
+    }
+
+    .brand h1 {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: 0;
+    }
+
+    .badge {
+      padding: 4px 8px;
+      border: 1px solid #c6d6f4;
+      border-radius: 999px;
+      color: #164d9c;
+      background: #f4f8ff;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .group {
+      display: grid;
+      gap: 10px;
+    }
+
+    .group-title {
+      margin: 0;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--muted);
+    }
+
+    label {
+      display: grid;
+      gap: 6px;
+      font-size: 13px;
+      color: #344054;
+    }
+
+    select,
+    input[type="number"] {
+      width: 100%;
+      height: 38px;
+      padding: 0 10px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: #fff;
+      color: var(--text);
+    }
+
+    input[type="file"] {
+      display: none;
+    }
+
+    .button-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .button-row.three {
+      grid-template-columns: repeat(3, 1fr);
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      min-height: 38px;
+      padding: 8px 10px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: #fff;
+      color: var(--text);
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .btn:hover {
+      border-color: #b8c2d1;
+      background: #f9fafb;
+    }
+
+    .btn.primary {
+      border-color: var(--accent);
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .btn.primary:hover {
+      border-color: var(--accent-dark);
+      background: var(--accent-dark);
+    }
+
+    .btn.danger {
+      color: var(--danger);
+    }
+
+    .btn:disabled {
+      opacity: .45;
+      cursor: not-allowed;
+    }
+
+    .toggle {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      min-height: 38px;
+      padding: 8px 10px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: #fff;
+      font-size: 13px;
+      color: #344054;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .toggle input {
+      width: 18px;
+      height: 18px;
+      accent-color: var(--accent);
+    }
+
+    .hint,
+    .status {
+      margin: 0;
+      font-size: 12px;
+      line-height: 1.5;
+      color: var(--muted);
+    }
+
+    .status {
+      min-height: 36px;
+      padding: 9px 10px;
+      border: 1px solid #d7e2f6;
+      border-radius: 6px;
+      background: #f8fbff;
+      color: #31506f;
+    }
+
+    .workspace {
+      display: grid;
+      grid-template-rows: 54px 1fr;
+      min-width: 0;
+      min-height: 0;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 10px 16px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(255, 255, 255, .72);
+      backdrop-filter: blur(10px);
+    }
+
+    .topbar-left,
+    .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .chip {
+      min-width: 86px;
+      padding: 7px 10px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: #fff;
+      font-size: 13px;
+      color: #344054;
+      text-align: center;
+      white-space: nowrap;
+    }
+
+    .zoom-select {
+      height: 34px;
+      cursor: pointer;
+      appearance: auto;
+    }
+
+    .stage-wrap {
+      position: relative;
+      min-width: 0;
+      min-height: 0;
+      overflow: auto;
+      padding: 190px;
+      cursor: grab;
+      background:
+        radial-gradient(circle at 1px 1px, rgba(139, 152, 171, .22) 1px, transparent 0),
+        #eef1f4;
+      background-size: 18px 18px;
+    }
+
+    .stage-wrap.panning {
+      cursor: grabbing;
+    }
+
+    .stage-shell {
+      display: grid;
+      place-items: center;
+      min-width: min-content;
+      min-height: 100%;
+    }
+
+    .page {
+      position: relative;
+      background: #fff;
+      box-shadow: var(--shadow);
+      overflow: visible;
+      touch-action: none;
+      cursor: grab;
+    }
+
+    .page::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      border: 1px solid rgba(20, 31, 45, .18);
+    }
+
+    .page.drag-over {
+      outline: 3px solid rgba(22, 100, 217, .38);
+      outline-offset: 8px;
+    }
+
+    .empty-drop {
+      position: absolute;
+      inset: 24px;
+      display: grid;
+      place-items: center;
+      border: 2px dashed #c7d2e1;
+      border-radius: 8px;
+      color: #68778b;
+      text-align: center;
+      pointer-events: none;
+      background: rgba(255, 255, 255, .56);
+    }
+
+    .empty-drop strong {
+      display: block;
+      margin-bottom: 6px;
+      color: #344054;
+      font-size: 16px;
+    }
+
+    .item {
+      position: absolute;
+      left: 0;
+      top: 0;
+      transform-origin: 50% 50%;
+      touch-action: none;
+      cursor: move;
+      user-select: none;
+      will-change: transform, width, height;
+    }
+
+    .item img {
+      display: block;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      -webkit-user-drag: none;
+      object-fit: fill;
+    }
+
+    .item.selected {
+      outline: 2px solid var(--accent);
+      outline-offset: 0;
+      box-shadow: 0 0 0 1px rgba(255, 255, 255, .9);
+    }
+
+    .handle {
+      position: absolute;
+      width: 16px;
+      height: 16px;
+      border: 2px solid #fff;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, .26);
+      display: none;
+      touch-action: none;
+    }
+
+    .selected .handle {
+      display: block;
+    }
+
+    .handle.nw {
+      left: -8px;
+      top: -8px;
+      cursor: nwse-resize;
+    }
+
+    .handle.ne {
+      right: -8px;
+      top: -8px;
+      cursor: nesw-resize;
+    }
+
+    .handle.sw {
+      left: -8px;
+      bottom: -8px;
+      cursor: nesw-resize;
+    }
+
+    .handle.se {
+      right: -8px;
+      bottom: -8px;
+      cursor: nwse-resize;
+    }
+
+    .rotate-handle {
+      position: absolute;
+      left: 50%;
+      top: -42px;
+      width: 24px;
+      height: 24px;
+      margin-left: -12px;
+      border: 2px solid #fff;
+      border-radius: 50%;
+      background: #0f766e;
+      color: #fff;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, .25);
+      cursor: grab;
+      touch-action: none;
+    }
+
+    .rotate-handle::before {
+      content: "";
+      position: absolute;
+      left: 50%;
+      top: 22px;
+      width: 2px;
+      height: 20px;
+      margin-left: -1px;
+      background: rgba(15, 118, 110, .78);
+    }
+
+    .selected .rotate-handle {
+      display: flex;
+    }
+
+    .rotate-handle:active {
+      cursor: grabbing;
+    }
+
+    .guide {
+      position: absolute;
+      z-index: 10000;
+      display: none;
+      pointer-events: none;
+      background: #c0187a;
+      opacity: .86;
+    }
+
+    .guide.v {
+      top: 0;
+      bottom: 0;
+      width: 1px;
+    }
+
+    .guide.h {
+      left: 0;
+      right: 0;
+      height: 1px;
+    }
+
+    .floating-toolbar {
+      position: absolute;
+      z-index: 10001;
+      display: none;
+      align-items: center;
+      gap: 4px;
+      padding: 5px;
+      border: 1px solid rgba(17, 24, 39, .12);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, .96);
+      box-shadow: 0 10px 26px rgba(24, 36, 54, .18);
+      transform: translate(-50%, -100%);
+      backdrop-filter: blur(10px);
+    }
+
+    .floating-toolbar .tool-btn {
+      min-width: 34px;
+      height: 30px;
+      padding: 0 9px;
+      border: 0;
+      border-radius: 6px;
+      background: transparent;
+      color: #253244;
+      cursor: pointer;
+    }
+
+    .floating-toolbar .tool-btn:hover {
+      background: #eef4ff;
+    }
+
+    .floating-toolbar .tool-btn.danger {
+      color: var(--danger);
+    }
+
+    .layers {
+      display: grid;
+      gap: 6px;
+      max-height: 180px;
+      overflow: auto;
+      padding-right: 2px;
+    }
+
+    .layer {
+      display: grid;
+      grid-template-columns: 34px 1fr;
+      align-items: center;
+      gap: 8px;
+      min-height: 38px;
+      padding: 5px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: #fff;
+      cursor: pointer;
+    }
+
+    .layer.active {
+      border-color: var(--accent);
+      background: #f5f9ff;
+    }
+
+    .thumb {
+      width: 28px;
+      height: 28px;
+      border: 1px solid var(--line);
+      border-radius: 4px;
+      object-fit: contain;
+      background:
+        linear-gradient(45deg, #e8ebef 25%, transparent 25%),
+        linear-gradient(-45deg, #e8ebef 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, #e8ebef 75%),
+        linear-gradient(-45deg, transparent 75%, #e8ebef 75%),
+        #fff;
+      background-position: 0 0, 0 5px, 5px -5px, -5px 0;
+      background-size: 10px 10px;
+    }
+
+    .layer-name {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 12px;
+      color: #344054;
+    }
+
+    @media (max-width: 920px) {
+      .app {
+        grid-template-columns: 260px 1fr;
+        min-width: 760px;
+      }
+
+      .sidebar {
+        padding: 14px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <h1>PastePad</h1>
+      </div>
+
+      <section class="group">
+        <p class="group-title">用紙</p>
+        <label>
+          サイズ
+          <select id="paperPreset">
+            <option value="A4-P">A4 縦</option>
+            <option value="A4-L">A4 横</option>
+            <option value="A3-P">A3 縦</option>
+            <option value="A3-L">A3 横</option>
+          </select>
+        </label>
+      </section>
+
+      <section class="group">
+        <p class="group-title">画像</p>
+        <label class="btn primary" for="fileInput">＋ 画像を追加</label>
+        <input id="fileInput" type="file" accept="image/*,application/pdf,.pdf" multiple>
+        <div class="button-row">
+          <button id="deleteBtn" class="btn danger" type="button" disabled>削除</button>
+          <button id="duplicateBtn" class="btn" type="button" disabled>複製</button>
+        </div>
+        <div class="button-row">
+          <button id="frontBtn" class="btn" type="button" disabled>前面</button>
+          <button id="backBtn" class="btn" type="button" disabled>背面</button>
+        </div>
+      </section>
+
+      <section class="group">
+        <p class="group-title">選択中</p>
+        <div class="button-row">
+          <label>
+            X mm
+            <input id="xInput" type="number" step="1" disabled>
+          </label>
+          <label>
+            Y mm
+            <input id="yInput" type="number" step="1" disabled>
+          </label>
+        </div>
+        <div class="button-row">
+          <label>
+            幅 mm
+            <input id="wInput" type="number" step="1" min="1" disabled>
+          </label>
+          <label>
+            高さ mm
+            <input id="hInput" type="number" step="1" min="1" disabled>
+          </label>
+        </div>
+        <label>
+          角度
+          <input id="angleInput" type="number" step="1" disabled>
+        </label>
+      </section>
+
+      <section class="group">
+        <p class="group-title">ダウンロード</p>
+        <label>
+          解像度
+          <select id="dpiSelect">
+            <option value="150">150 dpi</option>
+            <option value="200">200 dpi</option>
+            <option value="300">300 dpi</option>
+            <option value="600" selected>600 dpi</option>
+          </select>
+        </label>
+        <div class="button-row three">
+          <button id="pngBtn" class="btn primary" type="button">PNG</button>
+          <button id="jpgBtn" class="btn" type="button">JPEG</button>
+          <button id="pdfBtn" class="btn" type="button">PDF</button>
+        </div>
+      </section>
+
+      <p id="status" class="status">画像を用紙へドラッグ＆ドロップできます。</p>
+      <p class="hint">四隅の青い点で拡大縮小、上の緑の点で回転、画像本体のドラッグで移動します。Shift / Ctrl / Command を押しながらリサイズすると比率を固定します。</p>
+    </aside>
+
+    <main class="workspace">
+      <div class="topbar">
+        <div class="topbar-left">
+          <select id="zoomSelect" class="chip zoom-select" aria-label="プレビュー倍率">
+            <option value="25">25%</option>
+            <option value="50">50%</option>
+            <option value="75">75%</option>
+            <option value="100" selected>100%</option>
+            <option value="125">125%</option>
+            <option value="150">150%</option>
+            <option value="200">200%</option>
+            <option value="300">300%</option>
+          </select>
+          <button id="zoomOutBtn" class="btn" type="button" title="縮小">−</button>
+          <button id="zoomInBtn" class="btn" type="button" title="拡大">＋</button>
+        </div>
+        <div class="topbar-right">
+          <button id="fitBtn" class="btn" type="button">全体表示</button>
+          <button id="actualBtn" class="btn" type="button">実寸表示</button>
+          <button id="clearBtn" class="btn danger" type="button">全消去</button>
+        </div>
+      </div>
+      <div id="stageWrap" class="stage-wrap">
+        <div class="stage-shell">
+          <div id="page" class="page">
+            <div id="vGuide" class="guide v"></div>
+            <div id="hGuide" class="guide h"></div>
+            <div id="floatingToolbar" class="floating-toolbar" aria-hidden="true">
+              <button id="floatFrontBtn" class="tool-btn" type="button" title="前面へ">前面</button>
+              <button id="floatBackBtn" class="tool-btn" type="button" title="背面へ">背面</button>
+              <button id="floatDuplicateBtn" class="tool-btn" type="button" title="複製">複製</button>
+              <button id="floatDeleteBtn" class="tool-btn danger" type="button" title="削除">削除</button>
+            </div>
+            <div id="emptyDrop" class="empty-drop">
+              <div>
+                <strong>画像をここにドロップ</strong>
+                PNG / JPEG / GIF / WebP / PDF を配置できます
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="./vendor/pdf.min.js"></script>
+  <script>
+    const language = (navigator.language || navigator.userLanguage || "en").toLowerCase().startsWith("ja") ? "ja" : "en";
+    const messages = {
+      ja: {
+        appName: "PastePad",
+        paper: "用紙",
+        size: "サイズ",
+        paperA4P: "A4 縦",
+        paperA4L: "A4 横",
+        paperA3P: "A3 縦",
+        paperA3L: "A3 横",
+        image: "画像",
+        addImage: "＋ 画像を追加",
+        delete: "削除",
+        duplicate: "複製",
+        front: "前面",
+        back: "背面",
+        backTitle: "背面へ",
+        frontTitle: "前面へ",
+        duplicateTitle: "複製",
+        deleteTitle: "削除",
+        selected: "選択中",
+        widthMm: "幅 mm",
+        heightMm: "高さ mm",
+        angle: "角度",
+        download: "ダウンロード",
+        resolution: "解像度",
+        initialStatus: "画像を用紙へドラッグ＆ドロップできます。",
+        hint: "四隅の青い点で拡大縮小、上の緑の点で回転、画像本体のドラッグで移動します。Shift / Ctrl / Command を押しながらリサイズすると比率を固定します。",
+        previewZoom: "プレビュー倍率",
+        zoomOut: "縮小",
+        zoomIn: "拡大",
+        fit: "全体表示",
+        actual: "実寸表示",
+        clear: "全消去",
+        dropTitle: "画像をここにドロップ",
+        dropSubtitle: "PNG / JPEG / GIF / WebP / PDF を配置できます",
+        itemCount: "{count} 枚",
+        resize: "拡大縮小",
+        rotate: "回転",
+        undoEmpty: "取り消せる操作がありません。",
+        undone: "操作を取り消しました。",
+        invalidFiles: "画像ファイルまたはPDFファイルを選択してください。",
+        addedFiles: "{loaded} / {total} 件のファイルを追加しました。",
+        loadFailed: "{name} の読み込みに失敗しました。",
+        pdfLibMissing: "PDF読み込みライブラリが見つかりません。vendor/pdf.min.js を確認してください。",
+        pdfPageName: "{name} - {page}ページ",
+        pdfPrompt: "{name} は {total} ページあります。\n取り込むページ番号を入力してください。",
+        pdfInvalidPage: "1 から {total} までのページ番号を入力してください。",
+        exportImageFailed: "画像の書き出しに失敗しました。",
+        exportedImage: "{format}を書き出しました。",
+        exportedPdf: "PDFを書き出しました。",
+        paperChanged: "{paper}に変更しました。配置済み画像はそのまま残ります。",
+        cleared: "すべての画像を消去しました。"
+      },
+      en: {
+        appName: "PastePad",
+        paper: "Paper",
+        size: "Size",
+        paperA4P: "A4 Portrait",
+        paperA4L: "A4 Landscape",
+        paperA3P: "A3 Portrait",
+        paperA3L: "A3 Landscape",
+        image: "Image",
+        addImage: "+ Add images",
+        delete: "Delete",
+        duplicate: "Duplicate",
+        front: "Front",
+        back: "Back",
+        backTitle: "Send backward",
+        frontTitle: "Bring forward",
+        duplicateTitle: "Duplicate",
+        deleteTitle: "Delete",
+        selected: "Selected",
+        widthMm: "Width mm",
+        heightMm: "Height mm",
+        angle: "Angle",
+        download: "Download",
+        resolution: "Resolution",
+        initialStatus: "Drag and drop images onto the paper.",
+        hint: "Use the blue corner handles to resize, the green handle to rotate, and drag the image to move it. Hold Shift / Ctrl / Command while resizing to keep the aspect ratio.",
+        previewZoom: "Preview zoom",
+        zoomOut: "Zoom out",
+        zoomIn: "Zoom in",
+        fit: "Fit",
+        actual: "Actual size",
+        clear: "Clear all",
+        dropTitle: "Drop images here",
+        dropSubtitle: "PNG / JPEG / GIF / WebP / PDF files are supported",
+        itemCount: "{count} items",
+        resize: "Resize",
+        rotate: "Rotate",
+        undoEmpty: "There is nothing to undo.",
+        undone: "Undid the last action.",
+        invalidFiles: "Select image files or PDF files.",
+        addedFiles: "Added {loaded} / {total} files.",
+        loadFailed: "Failed to load {name}.",
+        pdfLibMissing: "The PDF loading library was not found. Check vendor/pdf.min.js.",
+        pdfPageName: "{name} - page {page}",
+        pdfPrompt: "{name} has {total} pages.\nEnter the page number to import.",
+        pdfInvalidPage: "Enter a page number from 1 to {total}.",
+        exportImageFailed: "Failed to export the image.",
+        exportedImage: "Exported {format}.",
+        exportedPdf: "Exported PDF.",
+        paperChanged: "Changed to {paper}. Existing images remain in place.",
+        cleared: "Cleared all images."
+      }
+    };
+
+    function t(key, values = {}) {
+      return (messages[language][key] || messages.en[key] || key).replace(/\{(\w+)\}/g, (_, name) => values[name] ?? "");
+    }
+
+    const paperPresets = {
+      "A4-P": { labelKey: "paperA4P", width: 210, height: 297 },
+      "A4-L": { labelKey: "paperA4L", width: 297, height: 210 },
+      "A3-P": { labelKey: "paperA3P", width: 297, height: 420 },
+      "A3-L": { labelKey: "paperA3L", width: 420, height: 297 }
+    };
+
+    const state = {
+      paperKey: "A4-P",
+      scale: 2.4,
+      items: [],
+      selectedId: null,
+      drag: null,
+      pan: null,
+      menuOpen: false,
+      undoStack: [],
+      isRestoring: false,
+      nextId: 1
+    };
+
+    const els = {
+      paperPreset: document.getElementById("paperPreset"),
+      fileInput: document.getElementById("fileInput"),
+      page: document.getElementById("page"),
+      stageWrap: document.getElementById("stageWrap"),
+      emptyDrop: document.getElementById("emptyDrop"),
+      floatingToolbar: document.getElementById("floatingToolbar"),
+      vGuide: document.getElementById("vGuide"),
+      hGuide: document.getElementById("hGuide"),
+      paperInfo: document.getElementById("paperInfo"),
+      zoomSelect: document.getElementById("zoomSelect"),
+      countInfo: document.getElementById("countInfo"),
+      layers: document.getElementById("layers"),
+      status: document.getElementById("status"),
+      fitBtn: document.getElementById("fitBtn"),
+      actualBtn: document.getElementById("actualBtn"),
+      zoomOutBtn: document.getElementById("zoomOutBtn"),
+      zoomInBtn: document.getElementById("zoomInBtn"),
+      clearBtn: document.getElementById("clearBtn"),
+      deleteBtn: document.getElementById("deleteBtn"),
+      duplicateBtn: document.getElementById("duplicateBtn"),
+      frontBtn: document.getElementById("frontBtn"),
+      backBtn: document.getElementById("backBtn"),
+      floatDeleteBtn: document.getElementById("floatDeleteBtn"),
+      floatDuplicateBtn: document.getElementById("floatDuplicateBtn"),
+      floatFrontBtn: document.getElementById("floatFrontBtn"),
+      floatBackBtn: document.getElementById("floatBackBtn"),
+      pngBtn: document.getElementById("pngBtn"),
+      jpgBtn: document.getElementById("jpgBtn"),
+      pdfBtn: document.getElementById("pdfBtn"),
+      dpiSelect: document.getElementById("dpiSelect"),
+      xInput: document.getElementById("xInput"),
+      yInput: document.getElementById("yInput"),
+      wInput: document.getElementById("wInput"),
+      hInput: document.getElementById("hInput"),
+      angleInput: document.getElementById("angleInput")
+    };
+
+    const selectedInputs = [els.xInput, els.yInput, els.wInput, els.hInput, els.angleInput];
+    const zoomPresets = [25, 50, 75, 100, 125, 150, 200, 300];
+
+    function currentPaper() {
+      return paperPresets[state.paperKey];
+    }
+
+    function paperLabel(key = state.paperKey) {
+      return t(paperPresets[key].labelKey);
+    }
+
+    function selectedItem() {
+      return state.items.find(item => item.id === state.selectedId) || null;
+    }
+
+    function setStatus(message) {
+      els.status.textContent = message;
+    }
+
+    function setText(selector, key) {
+      const node = document.querySelector(selector);
+      if (node) node.textContent = t(key);
+    }
+
+    function setTitle(selector, key) {
+      const node = document.querySelector(selector);
+      if (node) node.title = t(key);
+    }
+
+    function applyLocale() {
+      document.documentElement.lang = language === "ja" ? "ja" : "en";
+      document.title = t("appName");
+      setText(".brand h1", "appName");
+      const groups = document.querySelectorAll(".group-title");
+      [
+        "paper",
+        "image",
+        "selected",
+        "download"
+      ].forEach((key, index) => {
+        if (groups[index]) groups[index].textContent = t(key);
+      });
+      const paperLabelNode = els.paperPreset.closest("label");
+      if (paperLabelNode && paperLabelNode.firstChild) paperLabelNode.firstChild.textContent = `${t("size")}\n`;
+      [...els.paperPreset.options].forEach(option => {
+        option.textContent = paperLabel(option.value);
+      });
+      document.querySelector('label[for="fileInput"]').textContent = t("addImage");
+      els.deleteBtn.textContent = t("delete");
+      els.duplicateBtn.textContent = t("duplicate");
+      els.frontBtn.textContent = t("front");
+      els.backBtn.textContent = t("back");
+      els.floatBackBtn.textContent = t("back");
+      els.floatFrontBtn.textContent = t("front");
+      els.floatDuplicateBtn.textContent = t("duplicate");
+      els.floatDeleteBtn.textContent = t("delete");
+      els.floatBackBtn.title = t("backTitle");
+      els.floatFrontBtn.title = t("frontTitle");
+      els.floatDuplicateBtn.title = t("duplicateTitle");
+      els.floatDeleteBtn.title = t("deleteTitle");
+      const labels = [...document.querySelectorAll(".sidebar label")];
+      for (const label of labels) {
+        const input = label.querySelector("input, select");
+        if (!input) continue;
+        if (input.id === "wInput") label.firstChild.textContent = `${t("widthMm")}\n`;
+        if (input.id === "hInput") label.firstChild.textContent = `${t("heightMm")}\n`;
+        if (input.id === "angleInput") label.firstChild.textContent = `${t("angle")}\n`;
+        if (input.id === "dpiSelect") label.firstChild.textContent = `${t("resolution")}\n`;
+      }
+      els.fitBtn.textContent = t("fit");
+      els.actualBtn.textContent = t("actual");
+      els.clearBtn.textContent = t("clear");
+      els.zoomSelect.setAttribute("aria-label", t("previewZoom"));
+      els.zoomOutBtn.title = t("zoomOut");
+      els.zoomInBtn.title = t("zoomIn");
+      els.emptyDrop.querySelector("strong").textContent = t("dropTitle");
+      els.emptyDrop.querySelector("strong").nextSibling.textContent = `\n                ${t("dropSubtitle")}\n              `;
+      document.querySelector(".hint").textContent = t("hint");
+      setStatus(t("initialStatus"));
+      updateControls();
+    }
+
+    function snapshotState() {
+      return {
+        paperKey: state.paperKey,
+        scale: state.scale,
+        selectedId: state.selectedId,
+        nextId: state.nextId,
+        items: state.items.map(item => ({
+          id: item.id,
+          name: item.name,
+          src: item.src,
+          naturalWidth: item.naturalWidth,
+          naturalHeight: item.naturalHeight,
+          x: item.x,
+          y: item.y,
+          width: item.width,
+          height: item.height,
+          angle: item.angle
+        }))
+      };
+    }
+
+    function pushUndo() {
+      if (state.isRestoring) return;
+      pushUndoSnapshot(snapshotState());
+    }
+
+    function pushUndoSnapshot(snapshot) {
+      if (state.isRestoring) return;
+      state.undoStack.push(snapshot);
+      if (state.undoStack.length > 80) state.undoStack.shift();
+    }
+
+    async function undo() {
+      const snapshot = state.undoStack.pop();
+      if (!snapshot) {
+        setStatus(t("undoEmpty"));
+        return;
+      }
+      state.isRestoring = true;
+      state.paperKey = snapshot.paperKey;
+      state.scale = snapshot.scale;
+      state.selectedId = snapshot.selectedId;
+      state.nextId = snapshot.nextId;
+      state.menuOpen = false;
+      state.drag = null;
+      state.items = await Promise.all(snapshot.items.map(restoreItem));
+      els.paperPreset.value = state.paperKey;
+      hideFloatingToolbar();
+      updatePageSize();
+      state.isRestoring = false;
+      setStatus(t("undone"));
+    }
+
+    function restoreItem(data) {
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.addEventListener("load", () => resolve({ ...data, image: img }));
+        img.addEventListener("error", reject);
+        img.src = data.src;
+      });
+    }
+
+    function clamp(value, min, max) {
+      return Math.min(max, Math.max(min, value));
+    }
+
+    function normalizeAngle(deg) {
+      let value = deg % 360;
+      if (value > 180) value -= 360;
+      if (value < -180) value += 360;
+      return value;
+    }
+
+    function pagePointFromEvent(event) {
+      const rect = els.page.getBoundingClientRect();
+      return {
+        x: (event.clientX - rect.left) / state.scale,
+        y: (event.clientY - rect.top) / state.scale
+      };
+    }
+
+    function rotatePoint(point, deg) {
+      const rad = deg * Math.PI / 180;
+      const cos = Math.cos(rad);
+      const sin = Math.sin(rad);
+      return {
+        x: point.x * cos - point.y * sin,
+        y: point.x * sin + point.y * cos
+      };
+    }
+
+    function itemTransform(item) {
+      return `translate(${(item.x - item.width / 2) * state.scale}px, ${(item.y - item.height / 2) * state.scale}px) rotate(${item.angle}deg)`;
+    }
+
+    function applyItemStyle(node, item, index) {
+      node.style.width = `${item.width * state.scale}px`;
+      node.style.height = `${item.height * state.scale}px`;
+      node.style.transform = itemTransform(item);
+      node.style.zIndex = index + 1;
+    }
+
+    function itemNode(id) {
+      return els.page.querySelector(`.item[data-id="${id}"]`);
+    }
+
+    function updateItemNode(item) {
+      const node = itemNode(item.id);
+      if (!node) return;
+      const index = state.items.findIndex(entry => entry.id === item.id);
+      applyItemStyle(node, item, index);
+      positionFloatingToolbar();
+    }
+
+    function syncSelectionUi() {
+      for (const node of els.page.querySelectorAll(".item")) {
+        node.classList.toggle("selected", Number(node.dataset.id) === state.selectedId);
+      }
+      updateControls();
+      renderLayers();
+      positionFloatingToolbar();
+    }
+
+    function hideGuides() {
+      els.vGuide.style.display = "none";
+      els.hGuide.style.display = "none";
+    }
+
+    function hideFloatingToolbar() {
+      state.menuOpen = false;
+      els.floatingToolbar.style.display = "none";
+      els.floatingToolbar.setAttribute("aria-hidden", "true");
+    }
+
+    function showFloatingToolbarAt(pageX, pageY) {
+      state.menuOpen = true;
+      const x = pageX * state.scale;
+      const y = pageY * state.scale;
+      els.floatingToolbar.style.left = `${x}px`;
+      els.floatingToolbar.style.top = `${Math.max(12, y - 10)}px`;
+      els.floatingToolbar.style.display = "flex";
+      els.floatingToolbar.setAttribute("aria-hidden", "false");
+    }
+
+    function snapMove(item) {
+      const paper = currentPaper();
+      const threshold = 4;
+      let showV = false;
+      let showH = false;
+      if (Math.abs(item.x - paper.width / 2) <= threshold) {
+        item.x = paper.width / 2;
+        showV = true;
+      }
+      if (Math.abs(item.y - paper.height / 2) <= threshold) {
+        item.y = paper.height / 2;
+        showH = true;
+      }
+      els.vGuide.style.left = `${paper.width * state.scale / 2}px`;
+      els.hGuide.style.top = `${paper.height * state.scale / 2}px`;
+      els.vGuide.style.display = showV ? "block" : "none";
+      els.hGuide.style.display = showH ? "block" : "none";
+      snapItemCornerToPageCorner(item);
+    }
+
+    function pageCorners() {
+      const paper = currentPaper();
+      return [
+        { x: 0, y: 0 },
+        { x: paper.width, y: 0 },
+        { x: 0, y: paper.height },
+        { x: paper.width, y: paper.height }
+      ];
+    }
+
+    function itemCorners(item) {
+      const points = [
+        { x: -item.width / 2, y: -item.height / 2 },
+        { x: item.width / 2, y: -item.height / 2 },
+        { x: -item.width / 2, y: item.height / 2 },
+        { x: item.width / 2, y: item.height / 2 }
+      ];
+      return points.map(point => {
+        const rotated = rotatePoint(point, item.angle);
+        return { x: item.x + rotated.x, y: item.y + rotated.y };
+      });
+    }
+
+    function nearestPageCorner(point, threshold = 6) {
+      let best = null;
+      let bestDistance = Infinity;
+      for (const corner of pageCorners()) {
+        const distance = Math.hypot(point.x - corner.x, point.y - corner.y);
+        if (distance < bestDistance) {
+          best = corner;
+          bestDistance = distance;
+        }
+      }
+      return bestDistance <= threshold ? best : null;
+    }
+
+    function showCornerGuides(corner) {
+      els.vGuide.style.left = `${corner.x * state.scale}px`;
+      els.hGuide.style.top = `${corner.y * state.scale}px`;
+      els.vGuide.style.display = "block";
+      els.hGuide.style.display = "block";
+    }
+
+    function snapResizePoint(point) {
+      const corner = nearestPageCorner(point, 7);
+      if (!corner) {
+        if (state.drag) state.drag.snapCorner = null;
+        return point;
+      }
+      if (state.drag) state.drag.snapCorner = corner;
+      showCornerGuides(corner);
+      return { ...corner };
+    }
+
+    function snapItemCornerToPageCorner(item) {
+      const corners = itemCorners(item);
+      let best = null;
+      let bestDistance = Infinity;
+      for (const imageCorner of corners) {
+        const pageCorner = nearestPageCorner(imageCorner, 6);
+        if (!pageCorner) continue;
+        const distance = Math.hypot(imageCorner.x - pageCorner.x, imageCorner.y - pageCorner.y);
+        if (distance < bestDistance) {
+          bestDistance = distance;
+          best = { imageCorner, pageCorner };
+        }
+      }
+      if (!best) return;
+      item.x += best.pageCorner.x - best.imageCorner.x;
+      item.y += best.pageCorner.y - best.imageCorner.y;
+      showCornerGuides(best.pageCorner);
+    }
+
+    function isTemporaryAspectLock(event) {
+      return Boolean(event && (event.shiftKey || event.ctrlKey || event.metaKey));
+    }
+
+    function isAspectLockActive(event) {
+      return isTemporaryAspectLock(event);
+    }
+
+    function positionFloatingToolbar() {
+      const item = selectedItem();
+      if (!item || state.drag || !state.menuOpen) {
+        hideFloatingToolbar();
+        return;
+      }
+      const x = item.x * state.scale;
+      const y = Math.max(12, (item.y - item.height / 2) * state.scale - 14);
+      els.floatingToolbar.style.left = `${x}px`;
+      els.floatingToolbar.style.top = `${y}px`;
+      els.floatingToolbar.style.display = "flex";
+      els.floatingToolbar.setAttribute("aria-hidden", "false");
+    }
+
+    function syncZoomSelect() {
+      const percent = Math.round(state.scale / 2.4 * 100);
+      const value = String(percent);
+      let custom = els.zoomSelect.querySelector('option[data-custom="true"]');
+      if (zoomPresets.includes(percent)) {
+        if (custom) custom.remove();
+      } else {
+        if (!custom) {
+          custom = document.createElement("option");
+          custom.dataset.custom = "true";
+          els.zoomSelect.prepend(custom);
+        }
+        custom.value = value;
+        custom.textContent = `${percent}%`;
+      }
+      els.zoomSelect.value = value;
+    }
+
+    function updatePageSize() {
+      const paper = currentPaper();
+      els.page.style.width = `${paper.width * state.scale}px`;
+      els.page.style.height = `${paper.height * state.scale}px`;
+      if (els.paperInfo) els.paperInfo.textContent = paperLabel();
+      syncZoomSelect();
+      renderItems();
+    }
+
+    function fitPageToViewport() {
+      const paper = currentPaper();
+      const availableW = Math.max(280, els.stageWrap.clientWidth - 92);
+      const availableH = Math.max(280, els.stageWrap.clientHeight - 92);
+      state.scale = Math.max(.7, Math.min(3.8, availableW / paper.width, availableH / paper.height));
+      updatePageSize();
+    }
+
+    function zoomBy(factor) {
+      state.scale = clamp(state.scale * factor, .6, 7.2);
+      updatePageSize();
+    }
+
+    function setZoomPercent(percent) {
+      state.scale = clamp(2.4 * percent / 100, .6, 7.2);
+      updatePageSize();
+    }
+
+    function renderItems() {
+      for (const old of els.page.querySelectorAll(".item")) old.remove();
+
+      state.items.forEach((item, index) => {
+        const node = document.createElement("div");
+        node.className = `item${item.id === state.selectedId ? " selected" : ""}`;
+        node.dataset.id = item.id;
+        applyItemStyle(node, item, index);
+
+        const img = document.createElement("img");
+        img.src = item.src;
+        img.alt = item.name;
+        node.appendChild(img);
+
+        for (const key of ["nw", "ne", "sw", "se"]) {
+          const handle = document.createElement("div");
+          handle.className = `handle ${key}`;
+          handle.dataset.handle = key;
+          handle.title = t("resize");
+          node.appendChild(handle);
+        }
+
+        const rotate = document.createElement("div");
+        rotate.className = "rotate-handle";
+        rotate.dataset.rotate = "true";
+        rotate.title = t("rotate");
+        rotate.textContent = "↻";
+        node.appendChild(rotate);
+
+        node.addEventListener("pointerdown", onItemPointerDown);
+        node.addEventListener("contextmenu", onItemContextMenu);
+        els.page.appendChild(node);
+      });
+
+      els.emptyDrop.style.display = state.items.length ? "none" : "grid";
+      hideGuides();
+      updateControls();
+      renderLayers();
+      positionFloatingToolbar();
+    }
+
+    function renderLayers() {
+      if (!els.layers) return;
+      els.layers.replaceChildren();
+      [...state.items].reverse().forEach(item => {
+        const layer = document.createElement("button");
+        layer.type = "button";
+        layer.className = `layer${item.id === state.selectedId ? " active" : ""}`;
+        layer.addEventListener("click", () => selectItem(item.id));
+
+        const thumb = document.createElement("img");
+        thumb.className = "thumb";
+        thumb.src = item.src;
+        thumb.alt = "";
+
+        const name = document.createElement("span");
+        name.className = "layer-name";
+        name.textContent = item.name;
+
+        layer.append(thumb, name);
+        els.layers.appendChild(layer);
+      });
+    }
+
+    function updateControls() {
+      const item = selectedItem();
+      const hasItem = Boolean(item);
+      if (els.countInfo) els.countInfo.textContent = t("itemCount", { count: state.items.length });
+      for (const control of [els.deleteBtn, els.duplicateBtn, els.frontBtn, els.backBtn]) {
+        control.disabled = !hasItem;
+      }
+      selectedInputs.forEach(input => input.disabled = !hasItem);
+
+      if (!item) {
+        selectedInputs.forEach(input => input.value = "");
+        return;
+      }
+
+      els.xInput.value = Math.round(item.x - item.width / 2);
+      els.yInput.value = Math.round(item.y - item.height / 2);
+      els.wInput.value = Math.round(item.width);
+      els.hInput.value = Math.round(item.height);
+      els.angleInput.value = Math.round(item.angle);
+    }
+
+    function selectItem(id) {
+      state.selectedId = id;
+      syncSelectionUi();
+    }
+
+    async function addFiles(fileList) {
+      const files = [...fileList].filter(file => file.type.startsWith("image/") || isPdfFile(file));
+      if (!files.length) {
+        setStatus(t("invalidFiles"));
+        return;
+      }
+
+      const before = snapshotState();
+      let undoSaved = false;
+      let loaded = 0;
+      for (const file of files) {
+        try {
+          if (isPdfFile(file)) {
+            const added = await addPdfFile(file);
+            if (!added) continue;
+          } else {
+            await addImageFile(file);
+          }
+          if (!undoSaved) {
+            pushUndoSnapshot(before);
+            undoSaved = true;
+          }
+          loaded += 1;
+          renderItems();
+          setStatus(t("addedFiles", { loaded, total: files.length }));
+        } catch (error) {
+          console.error(error);
+          setStatus(t("loadFailed", { name: file.name }));
+        }
+      }
+      els.fileInput.value = "";
+    }
+
+    function isPdfFile(file) {
+      return file.type === "application/pdf" || /\.pdf$/i.test(file.name);
+    }
+
+    async function addImageFile(file) {
+      const buffer = await file.arrayBuffer();
+      const options = readImageSizeOptions(file, buffer);
+      const src = await fileToDataUrl(file);
+      await addImageSource(src, file.name, options);
+    }
+
+    function fileToDataUrl(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.addEventListener("error", reject);
+        reader.addEventListener("load", () => resolve(reader.result));
+        reader.readAsDataURL(file);
+      });
+    }
+
+    function readImageSizeOptions(file, buffer) {
+      const bytes = new Uint8Array(buffer);
+      if (file.type === "image/png" || /\.png$/i.test(file.name)) {
+        return readPngPhysicalSize(bytes) || {};
+      }
+      if (file.type === "image/jpeg" || /\.jpe?g$/i.test(file.name)) {
+        const dpi = readJpegDpi(bytes);
+        return dpi ? { dpiX: dpi.x, dpiY: dpi.y } : {};
+      }
+      return {};
+    }
+
+    function readPngPhysicalSize(bytes) {
+      const signature = [137, 80, 78, 71, 13, 10, 26, 10];
+      if (!signature.every((value, index) => bytes[index] === value)) return null;
+      const widthPx = readUint32(bytes, 16);
+      const heightPx = readUint32(bytes, 20);
+      let offset = 33;
+      while (offset + 12 <= bytes.length) {
+        const length = readUint32(bytes, offset);
+        const type = asciiFromBytes(bytes, offset + 4, 4);
+        if (type === "pHYs" && offset + 21 <= bytes.length) {
+          const xPpm = readUint32(bytes, offset + 8);
+          const yPpm = readUint32(bytes, offset + 12);
+          const unit = bytes[offset + 16];
+          if (unit === 1 && xPpm > 0 && yPpm > 0) {
+            return {
+              widthMm: widthPx / xPpm * 1000,
+              heightMm: heightPx / yPpm * 1000
+            };
+          }
+          return null;
+        }
+        offset += 12 + length;
+      }
+      return null;
+    }
+
+    function readJpegDpi(bytes) {
+      if (bytes[0] !== 0xff || bytes[1] !== 0xd8) return null;
+      let offset = 2;
+      while (offset + 4 < bytes.length) {
+        if (bytes[offset] !== 0xff) return null;
+        const marker = bytes[offset + 1];
+        if (marker === 0xda || marker === 0xd9) break;
+        const length = (bytes[offset + 2] << 8) | bytes[offset + 3];
+        const dataStart = offset + 4;
+        if (marker === 0xe0 && asciiFromBytes(bytes, dataStart, 5) === "JFIF\0") {
+          const unit = bytes[dataStart + 7];
+          const xDensity = (bytes[dataStart + 8] << 8) | bytes[dataStart + 9];
+          const yDensity = (bytes[dataStart + 10] << 8) | bytes[dataStart + 11];
+          if (xDensity > 0 && yDensity > 0) {
+            if (unit === 1) return { x: xDensity, y: yDensity };
+            if (unit === 2) return { x: xDensity * 2.54, y: yDensity * 2.54 };
+          }
+        }
+        if (marker === 0xe1 && asciiFromBytes(bytes, dataStart, 6) === "Exif\0\0") {
+          const exifDpi = readExifDpi(bytes, dataStart + 6, length - 8);
+          if (exifDpi) return exifDpi;
+        }
+        offset += 2 + length;
+      }
+      return null;
+    }
+
+    function readExifDpi(bytes, start, length) {
+      if (length < 14) return null;
+      const little = asciiFromBytes(bytes, start, 2) === "II";
+      const read16 = pos => little ? bytes[pos] | (bytes[pos + 1] << 8) : (bytes[pos] << 8) | bytes[pos + 1];
+      const read32 = pos => little
+        ? bytes[pos] | (bytes[pos + 1] << 8) | (bytes[pos + 2] << 16) | (bytes[pos + 3] << 24)
+        : (bytes[pos] << 24) | (bytes[pos + 1] << 16) | (bytes[pos + 2] << 8) | bytes[pos + 3];
+      if (read16(start + 2) !== 42) return null;
+      const ifdOffset = read32(start + 4);
+      const ifd = start + ifdOffset;
+      if (ifd < start || ifd + 2 > start + length) return null;
+      const count = read16(ifd);
+      let xResOffset = 0;
+      let yResOffset = 0;
+      let unit = 2;
+      for (let i = 0; i < count; i += 1) {
+        const entry = ifd + 2 + i * 12;
+        if (entry + 12 > start + length) break;
+        const tag = read16(entry);
+        if (tag === 0x011a) xResOffset = read32(entry + 8);
+        if (tag === 0x011b) yResOffset = read32(entry + 8);
+        if (tag === 0x0128) unit = read16(entry + 8);
+      }
+      if (!xResOffset || !yResOffset) return null;
+      const x = readRational(start + xResOffset);
+      const y = readRational(start + yResOffset);
+      if (!x || !y) return null;
+      if (unit === 3) return { x: x * 2.54, y: y * 2.54 };
+      return { x, y };
+
+      function readRational(pos) {
+        if (pos < start || pos + 8 > start + length) return null;
+        const numerator = read32(pos);
+        const denominator = read32(pos + 4);
+        return denominator ? numerator / denominator : null;
+      }
+    }
+
+    function readUint32(bytes, offset) {
+      return ((bytes[offset] << 24) | (bytes[offset + 1] << 16) | (bytes[offset + 2] << 8) | bytes[offset + 3]) >>> 0;
+    }
+
+    function asciiFromBytes(bytes, offset, length) {
+      let text = "";
+      for (let i = 0; i < length; i += 1) text += String.fromCharCode(bytes[offset + i] || 0);
+      return text;
+    }
+
+    function addImageSource(src, name, options = {}) {
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.addEventListener("error", reject);
+        img.addEventListener("load", () => {
+          addLoadedImage(img, src, name, options);
+          resolve();
+        });
+        img.src = src;
+      });
+    }
+
+    function addLoadedImage(img, src, name, options = {}) {
+      const paper = currentPaper();
+      let width;
+      let height;
+      if (options.widthMm && options.heightMm) {
+        width = options.widthMm;
+        height = options.heightMm;
+        const fitRatio = Math.min(paper.width / width, paper.height / height, 1);
+        width *= fitRatio;
+        height *= fitRatio;
+      } else {
+        const dpiX = options.dpiX || 96;
+        const dpiY = options.dpiY || 96;
+        width = img.naturalWidth * 25.4 / dpiX;
+        height = img.naturalHeight * 25.4 / dpiY;
+        const fitRatio = Math.min(paper.width / width, paper.height / height, 1);
+        width *= fitRatio;
+        height *= fitRatio;
+      }
+      const item = {
+        id: state.nextId++,
+        name,
+        src,
+        image: img,
+        naturalWidth: img.naturalWidth,
+        naturalHeight: img.naturalHeight,
+        x: paper.width / 2,
+        y: paper.height / 2,
+        width,
+        height,
+        angle: 0
+      };
+      state.items.push(item);
+      state.selectedId = item.id;
+    }
+
+    async function addPdfFile(file) {
+      if (!window.pdfjsLib) {
+        alert(t("pdfLibMissing"));
+        return false;
+      }
+      pdfjsLib.GlobalWorkerOptions.workerSrc = "./vendor/pdf.worker.min.js";
+      const data = await file.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument({ data }).promise;
+      const pageNumber = choosePdfPageNumber(file.name, pdf.numPages);
+      if (!pageNumber) return false;
+      const rendered = await renderPdfPageToDataUrl(pdf, pageNumber);
+      await addImageSource(rendered.src, t("pdfPageName", { name: file.name, page: pageNumber }), {
+        widthMm: rendered.widthMm,
+        heightMm: rendered.heightMm
+      });
+      return true;
+    }
+
+    function choosePdfPageNumber(fileName, pageCount) {
+      if (pageCount <= 1) return 1;
+      while (true) {
+        const answer = prompt(t("pdfPrompt", { name: fileName, total: pageCount }), "1");
+        if (answer === null) return null;
+        const pageNumber = Number(answer.trim());
+        if (Number.isInteger(pageNumber) && pageNumber >= 1 && pageNumber <= pageCount) {
+          return pageNumber;
+        }
+        alert(t("pdfInvalidPage", { total: pageCount }));
+      }
+    }
+
+    async function renderPdfPageToDataUrl(pdf, pageNumber) {
+      const page = await pdf.getPage(pageNumber);
+      const unitViewport = page.getViewport({ scale: 1 });
+      const viewport = page.getViewport({ scale: 2 });
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.ceil(viewport.width);
+      canvas.height = Math.ceil(viewport.height);
+      const ctx = canvas.getContext("2d");
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      await page.render({ canvasContext: ctx, viewport }).promise;
+      return {
+        src: canvas.toDataURL("image/png"),
+        widthMm: unitViewport.width * 25.4 / 72,
+        heightMm: unitViewport.height * 25.4 / 72
+      };
+    }
+
+    function onItemPointerDown(event) {
+      if (event.button !== 0) return;
+      event.preventDefault();
+      event.stopPropagation();
+      const node = event.currentTarget;
+      const item = state.items.find(entry => entry.id === Number(node.dataset.id));
+      if (!item) return;
+
+      state.selectedId = item.id;
+      syncSelectionUi();
+      const pointer = pagePointFromEvent(event);
+      const start = {
+        x: item.x,
+        y: item.y,
+        width: item.width,
+        height: item.height,
+        angle: item.angle,
+        pointer
+      };
+
+      const handleKey = event.target.dataset.handle;
+      if (handleKey) {
+        const map = {
+          nw: { sx: -1, sy: -1 },
+          ne: { sx: 1, sy: -1 },
+          sw: { sx: -1, sy: 1 },
+          se: { sx: 1, sy: 1 }
+        };
+        state.drag = { type: "resize", id: item.id, handle: map[handleKey], start };
+      } else if (event.target.dataset.rotate) {
+        state.drag = {
+          type: "rotate",
+          id: item.id,
+          start,
+          startPointerAngle: Math.atan2(pointer.y - item.y, pointer.x - item.x) * 180 / Math.PI
+        };
+      } else {
+        state.drag = { type: "move", id: item.id, start };
+      }
+
+      node.setPointerCapture(event.pointerId);
+      hideFloatingToolbar();
+    }
+
+    function onItemContextMenu(event) {
+      event.preventDefault();
+      event.stopPropagation();
+      const node = event.currentTarget;
+      const item = state.items.find(entry => entry.id === Number(node.dataset.id));
+      if (!item) return;
+      state.selectedId = item.id;
+      syncSelectionUi();
+      const point = pagePointFromEvent(event);
+      showFloatingToolbarAt(point.x, point.y);
+    }
+
+    function startPan(event) {
+      if (event.button !== 0) return;
+      if (event.target.closest(".item") || event.target.closest(".floating-toolbar")) return;
+      state.pan = {
+        pointerId: event.pointerId,
+        startX: event.clientX,
+        startY: event.clientY,
+        scrollLeft: els.stageWrap.scrollLeft,
+        scrollTop: els.stageWrap.scrollTop
+      };
+      els.stageWrap.classList.add("panning");
+      els.stageWrap.setPointerCapture(event.pointerId);
+    }
+
+    function updatePan(event) {
+      if (!state.pan) return false;
+      event.preventDefault();
+      els.stageWrap.scrollLeft = state.pan.scrollLeft - (event.clientX - state.pan.startX);
+      els.stageWrap.scrollTop = state.pan.scrollTop - (event.clientY - state.pan.startY);
+      return true;
+    }
+
+    function endPan() {
+      if (!state.pan) return false;
+      state.pan = null;
+      els.stageWrap.classList.remove("panning");
+      return true;
+    }
+
+    function onPointerMove(event) {
+      if (updatePan(event)) return;
+      if (!state.drag) return;
+      event.preventDefault();
+      const item = state.items.find(entry => entry.id === state.drag.id);
+      if (!item) return;
+
+      const point = pagePointFromEvent(event);
+      if (state.drag.type === "move") {
+        item.x = state.drag.start.x + point.x - state.drag.start.pointer.x;
+        item.y = state.drag.start.y + point.y - state.drag.start.pointer.y;
+        snapMove(item);
+      }
+
+      if (state.drag.type === "rotate") {
+        const angleNow = Math.atan2(point.y - state.drag.start.y, point.x - state.drag.start.x) * 180 / Math.PI;
+        item.angle = normalizeAngle(state.drag.start.angle + angleNow - state.drag.startPointerAngle);
+      }
+
+      if (state.drag.type === "resize") {
+        resizeItem(item, point, event);
+      }
+
+      updateItemNode(item);
+    }
+
+    function resizeItem(item, point, event) {
+      point = snapResizePoint(point);
+      const { start, handle } = state.drag;
+      const relative = rotatePoint({ x: point.x - start.x, y: point.y - start.y }, -start.angle);
+      const opposite = {
+        x: -handle.sx * start.width / 2,
+        y: -handle.sy * start.height / 2
+      };
+
+      let newWidth = Math.max(5, handle.sx * (relative.x - opposite.x));
+      let newHeight = Math.max(5, handle.sy * (relative.y - opposite.y));
+      const aspect = start.width / start.height;
+
+      if (isAspectLockActive(event)) {
+        if (newWidth / newHeight > aspect) {
+          newWidth = newHeight * aspect;
+        } else {
+          newHeight = newWidth / aspect;
+        }
+      }
+
+      const newCorner = {
+        x: opposite.x + handle.sx * newWidth,
+        y: opposite.y + handle.sy * newHeight
+      };
+      const centerLocal = {
+        x: (opposite.x + newCorner.x) / 2,
+        y: (opposite.y + newCorner.y) / 2
+      };
+      const centerWorld = rotatePoint(centerLocal, start.angle);
+
+      item.width = newWidth;
+      item.height = newHeight;
+      item.x = start.x + centerWorld.x;
+      item.y = start.y + centerWorld.y;
+      if (state.drag.snapCorner) {
+        const activeLocal = {
+          x: handle.sx * item.width / 2,
+          y: handle.sy * item.height / 2
+        };
+        const activeWorld = rotatePoint(activeLocal, item.angle);
+        const activePoint = {
+          x: item.x + activeWorld.x,
+          y: item.y + activeWorld.y
+        };
+        item.x += state.drag.snapCorner.x - activePoint.x;
+        item.y += state.drag.snapCorner.y - activePoint.y;
+      }
+    }
+
+    function onPointerUp() {
+      if (endPan()) return;
+      if (state.drag) {
+        const item = state.items.find(entry => entry.id === state.drag.id);
+        const start = state.drag.start;
+        const changed = item && start && (
+          item.x !== start.x ||
+          item.y !== start.y ||
+          item.width !== start.width ||
+          item.height !== start.height ||
+          item.angle !== start.angle
+        );
+        if (changed) {
+          const current = snapshotState();
+          state.items = state.items.map(entry => entry.id === item.id ? {
+            ...entry,
+            x: start.x,
+            y: start.y,
+            width: start.width,
+            height: start.height,
+            angle: start.angle
+          } : entry);
+          pushUndo();
+          state.items = current.items.map((entry, index) => ({ ...state.items[index], ...entry }));
+        }
+        hideGuides();
+        state.drag = null;
+        updateControls();
+        renderLayers();
+        positionFloatingToolbar();
+        return;
+      }
+      state.drag = null;
+    }
+
+    function updateSelectedFromInputs() {
+      const item = selectedItem();
+      if (!item) return;
+      pushUndo();
+
+      const left = Number(els.xInput.value) || 0;
+      const top = Number(els.yInput.value) || 0;
+      let width = Math.max(1, Number(els.wInput.value) || item.width);
+      let height = Math.max(1, Number(els.hInput.value) || item.height);
+
+      item.width = width;
+      item.height = height;
+      item.x = left + width / 2;
+      item.y = top + height / 2;
+      item.angle = normalizeAngle(Number(els.angleInput.value) || 0);
+      renderItems();
+    }
+
+    function duplicateSelected() {
+      const item = selectedItem();
+      if (!item) return;
+      pushUndo();
+      const clone = {
+        ...item,
+        id: state.nextId++,
+        name: `${item.name} copy`,
+        x: item.x + 10,
+        y: item.y + 10
+      };
+      state.items.push(clone);
+      state.selectedId = clone.id;
+      renderItems();
+    }
+
+    function deleteSelected() {
+      if (!state.selectedId) return;
+      pushUndo();
+      state.items = state.items.filter(item => item.id !== state.selectedId);
+      state.selectedId = state.items.length ? state.items[state.items.length - 1].id : null;
+      renderItems();
+    }
+
+    function moveLayer(direction) {
+      const index = state.items.findIndex(item => item.id === state.selectedId);
+      if (index < 0) return;
+      const target = direction === "front" ? state.items.length - 1 : 0;
+      if (index === target) return;
+      pushUndo();
+      const [item] = state.items.splice(index, 1);
+      state.items.splice(target, 0, item);
+      renderItems();
+    }
+
+    function drawExportCanvas(dpi, type) {
+      const paper = currentPaper();
+      const widthPx = Math.round(paper.width / 25.4 * dpi);
+      const heightPx = Math.round(paper.height / 25.4 * dpi);
+      const canvas = document.createElement("canvas");
+      canvas.width = widthPx;
+      canvas.height = heightPx;
+      const ctx = canvas.getContext("2d");
+      const ratio = dpi / 25.4;
+
+      ctx.save();
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, widthPx, heightPx);
+      ctx.restore();
+
+      state.items.forEach(item => {
+        ctx.save();
+        ctx.translate(item.x * ratio, item.y * ratio);
+        ctx.rotate(item.angle * Math.PI / 180);
+        ctx.drawImage(
+          item.image,
+          -item.width * ratio / 2,
+          -item.height * ratio / 2,
+          item.width * ratio,
+          item.height * ratio
+        );
+        ctx.restore();
+      });
+
+      if (type === "jpeg") {
+        const flattened = document.createElement("canvas");
+        flattened.width = widthPx;
+        flattened.height = heightPx;
+        const flatCtx = flattened.getContext("2d");
+        flatCtx.fillStyle = "#ffffff";
+        flatCtx.fillRect(0, 0, widthPx, heightPx);
+        flatCtx.drawImage(canvas, 0, 0);
+        return flattened;
+      }
+      return canvas;
+    }
+
+    function downloadBlob(blob, filename) {
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+
+    function exportImage(format) {
+      const dpi = Number(els.dpiSelect.value);
+      const canvas = drawExportCanvas(dpi, format);
+      const mime = format === "jpeg" ? "image/jpeg" : "image/png";
+      const ext = format === "jpeg" ? "jpg" : "png";
+      canvas.toBlob(blob => {
+        if (!blob) {
+          setStatus(t("exportImageFailed"));
+          return;
+        }
+        downloadBlob(blob, `pastepad-${paperLabel().replace(/\s/g, "")}-${dpi}dpi.${ext}`);
+        setStatus(t("exportedImage", { format: ext.toUpperCase() }));
+      }, mime, .95);
+    }
+
+    function exportPdf() {
+      const dpi = Number(els.dpiSelect.value);
+      const canvas = drawExportCanvas(dpi, "jpeg");
+      const jpegDataUrl = canvas.toDataURL("image/jpeg", .95);
+      const jpegBytes = base64ToBytes(jpegDataUrl.split(",")[1]);
+      const paper = currentPaper();
+      const pageW = paper.width / 25.4 * 72;
+      const pageH = paper.height / 25.4 * 72;
+      const pdfBytes = buildSingleImagePdf(jpegBytes, canvas.width, canvas.height, pageW, pageH);
+      downloadBlob(new Blob([pdfBytes], { type: "application/pdf" }), `pastepad-${paperLabel().replace(/\s/g, "")}-${dpi}dpi.pdf`);
+      setStatus(t("exportedPdf"));
+    }
+
+    function base64ToBytes(base64) {
+      const binary = atob(base64);
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i);
+      return bytes;
+    }
+
+    function asciiBytes(text) {
+      const bytes = new Uint8Array(text.length);
+      for (let i = 0; i < text.length; i += 1) bytes[i] = text.charCodeAt(i) & 0xff;
+      return bytes;
+    }
+
+    function buildSingleImagePdf(imageBytes, imageW, imageH, pageW, pageH) {
+      const chunks = [];
+      const offsets = [0];
+      let length = 0;
+
+      function push(chunk) {
+        const bytes = typeof chunk === "string" ? asciiBytes(chunk) : chunk;
+        chunks.push(bytes);
+        length += bytes.length;
+      }
+
+      function object(id, bodyParts) {
+        offsets[id] = length;
+        push(`${id} 0 obj\n`);
+        for (const part of bodyParts) push(part);
+        push("\nendobj\n");
+      }
+
+      push("%PDF-1.4\n%\xE2\xE3\xCF\xD3\n");
+      object(1, ["<< /Type /Catalog /Pages 2 0 R >>"]);
+      object(2, ["<< /Type /Pages /Kids [3 0 R] /Count 1 >>"]);
+      object(3, [`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${pageW.toFixed(3)} ${pageH.toFixed(3)}] /Resources << /XObject << /Im0 4 0 R >> >> /Contents 5 0 R >>`]);
+      object(4, [
+        `<< /Type /XObject /Subtype /Image /Width ${imageW} /Height ${imageH} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${imageBytes.length} >>\nstream\n`,
+        imageBytes,
+        "\nendstream"
+      ]);
+
+      const content = `q\n${pageW.toFixed(3)} 0 0 ${pageH.toFixed(3)} 0 0 cm\n/Im0 Do\nQ\n`;
+      object(5, [`<< /Length ${content.length} >>\nstream\n${content}endstream`]);
+
+      const xrefStart = length;
+      push(`xref\n0 ${offsets.length}\n`);
+      push("0000000000 65535 f \n");
+      for (let i = 1; i < offsets.length; i += 1) {
+        push(`${String(offsets[i]).padStart(10, "0")} 00000 n \n`);
+      }
+      push(`trailer\n<< /Size ${offsets.length} /Root 1 0 R >>\nstartxref\n${xrefStart}\n%%EOF`);
+
+      const pdf = new Uint8Array(length);
+      let position = 0;
+      for (const chunk of chunks) {
+        pdf.set(chunk, position);
+        position += chunk.length;
+      }
+      return pdf;
+    }
+
+    els.paperPreset.addEventListener("change", () => {
+      pushUndo();
+      state.paperKey = els.paperPreset.value;
+      fitPageToViewport();
+      setStatus(t("paperChanged", { paper: paperLabel() }));
+    });
+
+    els.fileInput.addEventListener("change", event => addFiles(event.target.files));
+    els.fitBtn.addEventListener("click", fitPageToViewport);
+    els.actualBtn.addEventListener("click", () => {
+      state.scale = 2.4;
+      updatePageSize();
+    });
+    els.zoomOutBtn.addEventListener("click", () => zoomBy(.9));
+    els.zoomInBtn.addEventListener("click", () => zoomBy(1.1));
+    els.zoomSelect.addEventListener("change", () => setZoomPercent(Number(els.zoomSelect.value)));
+    els.clearBtn.addEventListener("click", () => {
+      if (!state.items.length) return;
+      pushUndo();
+      state.items = [];
+      state.selectedId = null;
+      renderItems();
+      setStatus(t("cleared"));
+    });
+    els.deleteBtn.addEventListener("click", deleteSelected);
+    els.duplicateBtn.addEventListener("click", duplicateSelected);
+    els.frontBtn.addEventListener("click", () => moveLayer("front"));
+    els.backBtn.addEventListener("click", () => moveLayer("back"));
+    els.floatDeleteBtn.addEventListener("click", deleteSelected);
+    els.floatDuplicateBtn.addEventListener("click", duplicateSelected);
+    els.floatFrontBtn.addEventListener("click", () => moveLayer("front"));
+    els.floatBackBtn.addEventListener("click", () => moveLayer("back"));
+    els.pngBtn.addEventListener("click", () => exportImage("png"));
+    els.jpgBtn.addEventListener("click", () => exportImage("jpeg"));
+    els.pdfBtn.addEventListener("click", exportPdf);
+
+    selectedInputs.forEach(input => input.addEventListener("change", updateSelectedFromInputs));
+
+    els.floatingToolbar.addEventListener("pointerdown", event => event.stopPropagation());
+    els.floatingToolbar.addEventListener("click", event => event.stopPropagation());
+    els.floatingToolbar.addEventListener("contextmenu", event => {
+      event.preventDefault();
+      event.stopPropagation();
+    });
+
+    els.page.addEventListener("pointerdown", event => {
+      if (event.target === els.page || event.target === els.emptyDrop) {
+        state.selectedId = null;
+        syncSelectionUi();
+      }
+    });
+    els.stageWrap.addEventListener("pointerdown", event => {
+      if (event.target.closest(".item") || event.target.closest(".floating-toolbar")) return;
+      hideFloatingToolbar();
+      state.selectedId = null;
+      syncSelectionUi();
+      startPan(event);
+    });
+    els.stageWrap.addEventListener("contextmenu", event => {
+      if (event.target.closest(".item") || event.target.closest(".floating-toolbar")) return;
+      event.preventDefault();
+      hideFloatingToolbar();
+    });
+    window.addEventListener("pointermove", onPointerMove);
+    window.addEventListener("pointerup", onPointerUp);
+    window.addEventListener("resize", fitPageToViewport);
+    els.stageWrap.addEventListener("wheel", event => {
+      if (!event.ctrlKey) return;
+      event.preventDefault();
+      zoomBy(event.deltaY > 0 ? .92 : 1.08);
+    }, { passive: false });
+    window.addEventListener("keydown", event => {
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "z" && !event.shiftKey) {
+        event.preventDefault();
+        undo();
+        return;
+      }
+      const item = selectedItem();
+      const editingNumber = selectedInputs.includes(document.activeElement);
+      if (!item || editingNumber) return;
+      if (event.key === "Delete" || event.key === "Backspace") {
+        event.preventDefault();
+        deleteSelected();
+        return;
+      }
+      const step = event.shiftKey ? 10 : 1;
+      const delta = {
+        ArrowLeft: [-step, 0],
+        ArrowRight: [step, 0],
+        ArrowUp: [0, -step],
+        ArrowDown: [0, step]
+      }[event.key];
+      if (!delta) return;
+      event.preventDefault();
+      pushUndo();
+      item.x += delta[0];
+      item.y += delta[1];
+      updateItemNode(item);
+      updateControls();
+    });
+
+    document.body.addEventListener("dragover", event => {
+      event.preventDefault();
+      els.page.classList.add("drag-over");
+    });
+    document.body.addEventListener("dragleave", event => {
+      if (!event.relatedTarget) els.page.classList.remove("drag-over");
+    });
+    document.body.addEventListener("drop", event => {
+      event.preventDefault();
+      event.stopPropagation();
+      if (event.__pastePadHandled) return;
+      event.__pastePadHandled = true;
+      els.page.classList.remove("drag-over");
+      addFiles(event.dataTransfer.files);
+    });
+
+    applyLocale();
+    fitPageToViewport();
+  </script>
+</body>
+</html>
