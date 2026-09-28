@@ -101,8 +101,11 @@
     }
 
     select,
-    input[type="number"] {
+    input[type="number"],
+    input[type="url"],
+    input[type="text"] {
       width: 100%;
+      min-width: 0;
       height: 38px;
       padding: 0 10px;
       border: 1px solid var(--line);
@@ -118,6 +121,12 @@
     .button-row {
       display: grid;
       grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .input-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
       gap: 8px;
     }
 
@@ -340,6 +349,23 @@
       box-shadow: 0 0 0 1px rgba(255, 255, 255, .9);
     }
 
+    .link-badge {
+      position: absolute;
+      right: 4px;
+      bottom: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: rgba(22, 100, 217, .9);
+      color: #fff;
+      font-size: 12px;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, .25);
+      pointer-events: none;
+    }
+
     .handle {
       position: absolute;
       width: 16px;
@@ -560,6 +586,10 @@
         <p class="group-title">画像</p>
         <label class="btn primary" for="fileInput">＋ 画像を追加</label>
         <input id="fileInput" type="file" accept="image/*,application/pdf,.pdf" multiple>
+        <div class="input-row">
+          <input id="linkInput" type="url" placeholder="選択画像のリンク URL" aria-label="選択画像のリンク URL" disabled>
+          <button id="linkApplyBtn" class="btn" type="button" disabled>リンク設定</button>
+        </div>
         <div class="button-row">
           <button id="deleteBtn" class="btn danger" type="button" disabled>削除</button>
           <button id="duplicateBtn" class="btn" type="button" disabled>複製</button>
@@ -568,6 +598,19 @@
           <button id="frontBtn" class="btn" type="button" disabled>前面</button>
           <button id="backBtn" class="btn" type="button" disabled>背面</button>
         </div>
+      </section>
+
+      <section class="group">
+        <p class="group-title">リンク文字</p>
+        <label>
+          URL
+          <input id="linkTextUrlInput" type="url" placeholder="https://example.com">
+        </label>
+        <label>
+          表示テキスト（省略可）
+          <input id="linkTextLabelInput" type="text">
+        </label>
+        <button id="addLinkTextBtn" class="btn primary" type="button">＋ リンク文字を追加</button>
       </section>
 
       <section class="group">
@@ -651,6 +694,7 @@
               <button id="floatFrontBtn" class="tool-btn" type="button" title="前面へ">前面</button>
               <button id="floatBackBtn" class="tool-btn" type="button" title="背面へ">背面</button>
               <button id="floatDuplicateBtn" class="tool-btn" type="button" title="複製">複製</button>
+              <button id="floatLinkBtn" class="tool-btn" type="button" title="リンクを設定">リンク</button>
               <button id="floatDeleteBtn" class="tool-btn danger" type="button" title="削除">削除</button>
             </div>
             <div id="emptyDrop" class="empty-drop">
@@ -691,6 +735,20 @@
         widthMm: "幅 mm",
         heightMm: "高さ mm",
         angle: "角度",
+        linkPlaceholder: "https://example.com",
+        linkSet: "リンクを設定しました。PDF書き出し時にクリック可能になります。",
+        linkRemoved: "リンクを解除しました。",
+        linkInvalid: "有効なURL（http / https / mailto）を入力してください。",
+        linkText: "リンク文字",
+        linkTextUrl: "URL",
+        linkTextLabel: "表示テキスト（省略可）",
+        addLinkText: "＋ リンク文字を追加",
+        linkTextAdded: "リンク文字を追加しました。",
+        selectedLinkPlaceholder: "選択画像のリンク URL",
+        applyLink: "リンク設定",
+        link: "リンク",
+        linkTitle: "リンクを設定",
+        linkPrompt: "選択中の画像のリンク URL を入力してください。",
         download: "ダウンロード",
         resolution: "解像度",
         initialStatus: "画像を用紙へドラッグ＆ドロップできます。",
@@ -743,6 +801,20 @@
         widthMm: "Width mm",
         heightMm: "Height mm",
         angle: "Angle",
+        linkPlaceholder: "https://example.com",
+        linkSet: "Link set. It becomes clickable in exported PDFs.",
+        linkRemoved: "Link removed.",
+        linkInvalid: "Enter a valid URL (http / https / mailto).",
+        linkText: "Link text",
+        linkTextUrl: "URL",
+        linkTextLabel: "Display text (optional)",
+        addLinkText: "+ Add link text",
+        linkTextAdded: "Added link text.",
+        selectedLinkPlaceholder: "Link URL for selected image",
+        applyLink: "Set link",
+        link: "Link",
+        linkTitle: "Set link",
+        linkPrompt: "Enter a link URL for the selected image.",
         download: "Download",
         resolution: "Resolution",
         initialStatus: "Drag and drop images onto the paper.",
@@ -834,7 +906,13 @@
       yInput: document.getElementById("yInput"),
       wInput: document.getElementById("wInput"),
       hInput: document.getElementById("hInput"),
-      angleInput: document.getElementById("angleInput")
+      angleInput: document.getElementById("angleInput"),
+      linkInput: document.getElementById("linkInput"),
+      linkApplyBtn: document.getElementById("linkApplyBtn"),
+      floatLinkBtn: document.getElementById("floatLinkBtn"),
+      linkTextUrlInput: document.getElementById("linkTextUrlInput"),
+      linkTextLabelInput: document.getElementById("linkTextLabelInput"),
+      addLinkTextBtn: document.getElementById("addLinkTextBtn")
     };
 
     const selectedInputs = [els.xInput, els.yInput, els.wInput, els.hInput, els.angleInput];
@@ -874,6 +952,7 @@
       [
         "paper",
         "image",
+        "linkText",
         "selected",
         "download"
       ].forEach((key, index) => {
@@ -904,11 +983,20 @@
         if (input.id === "wInput") label.firstChild.textContent = `${t("widthMm")}\n`;
         if (input.id === "hInput") label.firstChild.textContent = `${t("heightMm")}\n`;
         if (input.id === "angleInput") label.firstChild.textContent = `${t("angle")}\n`;
+        if (input.id === "linkTextUrlInput") label.firstChild.textContent = `${t("linkTextUrl")}\n`;
+        if (input.id === "linkTextLabelInput") label.firstChild.textContent = `${t("linkTextLabel")}\n`;
         if (input.id === "dpiSelect") label.firstChild.textContent = `${t("resolution")}\n`;
       }
       els.fitBtn.textContent = t("fit");
       els.actualBtn.textContent = t("actual");
       els.clearBtn.textContent = t("clear");
+      els.linkInput.placeholder = t("selectedLinkPlaceholder");
+      els.linkInput.setAttribute("aria-label", t("selectedLinkPlaceholder"));
+      els.linkApplyBtn.textContent = t("applyLink");
+      els.floatLinkBtn.textContent = t("link");
+      els.floatLinkBtn.title = t("linkTitle");
+      els.linkTextUrlInput.placeholder = t("linkPlaceholder");
+      els.addLinkTextBtn.textContent = t("addLinkText");
       els.zoomSelect.setAttribute("aria-label", t("previewZoom"));
       els.zoomOutBtn.title = t("zoomOut");
       els.zoomInBtn.title = t("zoomIn");
@@ -935,7 +1023,8 @@
           y: item.y,
           width: item.width,
           height: item.height,
-          angle: item.angle
+          angle: item.angle,
+          link: item.link || ""
         }))
       };
     }
@@ -1237,6 +1326,14 @@
         img.alt = item.name;
         node.appendChild(img);
 
+        if (item.link) {
+          const badge = document.createElement("div");
+          badge.className = "link-badge";
+          badge.textContent = "🔗";
+          node.title = item.link;
+          node.appendChild(badge);
+        }
+
         for (const key of ["nw", "ne", "sw", "se"]) {
           const handle = document.createElement("div");
           handle.className = `handle ${key}`;
@@ -1295,11 +1392,15 @@
         control.disabled = !hasItem;
       }
       selectedInputs.forEach(input => input.disabled = !hasItem);
+      els.linkInput.disabled = !hasItem;
+      els.linkApplyBtn.disabled = !hasItem;
 
       if (!item) {
         selectedInputs.forEach(input => input.value = "");
+        els.linkInput.value = "";
         return;
       }
+      if (document.activeElement !== els.linkInput) els.linkInput.value = item.link || "";
 
       els.xInput.value = Math.round(item.x - item.width / 2);
       els.yInput.value = Math.round(item.y - item.height / 2);
@@ -1790,6 +1891,82 @@
       renderItems();
     }
 
+    function normalizeLinkUrl(value) {
+      const text = value.trim();
+      if (!text) return "";
+      const withScheme = /^[a-z][a-z\d+.-]*:/i.test(text) ? text : `https://${text}`;
+      try {
+        const url = new URL(withScheme);
+        if (!["http:", "https:", "mailto:"].includes(url.protocol)) return null;
+        if (url.protocol !== "mailto:" && !url.hostname) return null;
+        return url.href;
+      } catch {
+        return null;
+      }
+    }
+
+    function updateSelectedLink() {
+      const item = selectedItem();
+      if (!item) return;
+      const link = normalizeLinkUrl(els.linkInput.value);
+      if (link === null) {
+        els.linkInput.value = item.link || "";
+        setStatus(t("linkInvalid"));
+        return;
+      }
+      if (link === (item.link || "")) {
+        els.linkInput.value = link;
+        return;
+      }
+      pushUndo();
+      item.link = link;
+      renderItems();
+      setStatus(t(link ? "linkSet" : "linkRemoved"));
+    }
+
+    function renderLinkTextToDataUrl(text) {
+      const fontPx = 120;
+      const pxPerMm = fontPx / 5;
+      const pad = Math.round(fontPx * .1);
+      const font = `${fontPx}px "Yu Gothic UI", "Meiryo", system-ui, -apple-system, BlinkMacSystemFont, sans-serif`;
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+      ctx.font = font;
+      const textWidth = Math.ceil(ctx.measureText(text).width);
+      canvas.width = Math.min(16000, textWidth + pad * 2);
+      canvas.height = Math.ceil(fontPx * 1.35) + pad * 2;
+      ctx.font = font;
+      ctx.fillStyle = "#1a4fd6";
+      const baseline = pad + fontPx * 1.05;
+      ctx.fillText(text, pad, baseline);
+      ctx.fillRect(pad, baseline + fontPx * .12, Math.min(textWidth, canvas.width - pad * 2), Math.max(4, fontPx * .06));
+      return {
+        src: canvas.toDataURL("image/png"),
+        widthMm: canvas.width / pxPerMm,
+        heightMm: canvas.height / pxPerMm
+      };
+    }
+
+    async function addLinkText() {
+      const rawUrl = els.linkTextUrlInput.value.trim();
+      const link = normalizeLinkUrl(rawUrl);
+      if (!link) {
+        setStatus(t("linkInvalid"));
+        els.linkTextUrlInput.focus();
+        return;
+      }
+      const text = els.linkTextLabelInput.value.trim() || rawUrl;
+      const before = snapshotState();
+      const rendered = renderLinkTextToDataUrl(text);
+      await addImageSource(rendered.src, text, { widthMm: rendered.widthMm, heightMm: rendered.heightMm });
+      pushUndoSnapshot(before);
+      selectedItem().link = link;
+      els.linkTextUrlInput.value = "";
+      els.linkTextLabelInput.value = "";
+      renderItems();
+      setStatus(t("linkTextAdded"));
+    }
+
     function duplicateSelected() {
       const item = selectedItem();
       if (!item) return;
@@ -1901,9 +2078,40 @@
       const paper = currentPaper();
       const pageW = paper.width / 25.4 * 72;
       const pageH = paper.height / 25.4 * 72;
-      const pdfBytes = buildSingleImagePdf(jpegBytes, canvas.width, canvas.height, pageW, pageH);
+      const pdfBytes = buildSingleImagePdf(jpegBytes, canvas.width, canvas.height, pageW, pageH, collectPdfLinks());
       downloadBlob(new Blob([pdfBytes], { type: "application/pdf" }), `pastepad-${paperLabel().replace(/\s/g, "")}-${dpi}dpi.pdf`);
       setStatus(t("exportedPdf"));
+    }
+
+    function collectPdfLinks() {
+      const paper = currentPaper();
+      const pt = mm => mm / 25.4 * 72;
+      const pageH = pt(paper.height);
+      const links = [];
+      for (const item of state.items) {
+        if (!item.link) continue;
+        const corners = itemCorners(item).map(point => ({ x: pt(point.x), y: pageH - pt(point.y) }));
+        const xs = corners.map(point => point.x);
+        const ys = corners.map(point => point.y);
+        const rect = [
+          Math.max(0, Math.min(...xs)),
+          Math.max(0, Math.min(...ys)),
+          Math.min(pt(paper.width), Math.max(...xs)),
+          Math.min(pageH, Math.max(...ys))
+        ];
+        if (rect[2] <= rect[0] || rect[3] <= rect[1]) continue;
+        links.push({
+          uri: item.link,
+          rect,
+          quad: item.angle ? corners.flatMap(point => [point.x, point.y]) : null
+        });
+      }
+      return links;
+    }
+
+    function pdfLiteralString(text) {
+      const ascii = [...text].every(char => char.charCodeAt(0) < 0x80) ? text : encodeURI(text);
+      return `(${ascii.replace(/[\\()]/g, "\\$&")})`;
     }
 
     function base64ToBytes(base64) {
@@ -1919,7 +2127,7 @@
       return bytes;
     }
 
-    function buildSingleImagePdf(imageBytes, imageW, imageH, pageW, pageH) {
+    function buildSingleImagePdf(imageBytes, imageW, imageH, pageW, pageH, links = []) {
       const chunks = [];
       const offsets = [0];
       let length = 0;
@@ -1940,7 +2148,9 @@
       push("%PDF-1.4\n%\xE2\xE3\xCF\xD3\n");
       object(1, ["<< /Type /Catalog /Pages 2 0 R >>"]);
       object(2, ["<< /Type /Pages /Kids [3 0 R] /Count 1 >>"]);
-      object(3, [`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${pageW.toFixed(3)} ${pageH.toFixed(3)}] /Resources << /XObject << /Im0 4 0 R >> >> /Contents 5 0 R >>`]);
+      const annotIds = links.map((_, index) => 6 + index);
+      const annots = annotIds.length ? ` /Annots [${annotIds.map(id => `${id} 0 R`).join(" ")}]` : "";
+      object(3, [`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${pageW.toFixed(3)} ${pageH.toFixed(3)}] /Resources << /XObject << /Im0 4 0 R >> >> /Contents 5 0 R${annots} >>`]);
       object(4, [
         `<< /Type /XObject /Subtype /Image /Width ${imageW} /Height ${imageH} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${imageBytes.length} >>\nstream\n`,
         imageBytes,
@@ -1949,6 +2159,11 @@
 
       const content = `q\n${pageW.toFixed(3)} 0 0 ${pageH.toFixed(3)} 0 0 cm\n/Im0 Do\nQ\n`;
       object(5, [`<< /Length ${content.length} >>\nstream\n${content}endstream`]);
+      links.forEach((link, index) => {
+        const rect = link.rect.map(value => value.toFixed(3)).join(" ");
+        const quad = link.quad ? ` /QuadPoints [${link.quad.map(value => value.toFixed(3)).join(" ")}]` : "";
+        object(annotIds[index], [`<< /Type /Annot /Subtype /Link /Rect [${rect}]${quad} /Border [0 0 0] /A << /S /URI /URI ${pdfLiteralString(link.uri)} >> >>`]);
+      });
 
       const xrefStart = length;
       push(`xref\n0 ${offsets.length}\n`);
@@ -2004,6 +2219,23 @@
     els.pdfBtn.addEventListener("click", exportPdf);
 
     selectedInputs.forEach(input => input.addEventListener("change", updateSelectedFromInputs));
+    els.linkInput.addEventListener("change", updateSelectedLink);
+    els.linkInput.addEventListener("keydown", event => {
+      if (event.key === "Enter") els.linkInput.blur();
+    });
+    els.linkApplyBtn.addEventListener("click", updateSelectedLink);
+    els.floatLinkBtn.addEventListener("click", () => {
+      hideFloatingToolbar();
+      els.linkInput.focus();
+      els.linkInput.select();
+      setStatus(t("linkPrompt"));
+    });
+    els.addLinkTextBtn.addEventListener("click", addLinkText);
+    for (const input of [els.linkTextUrlInput, els.linkTextLabelInput]) {
+      input.addEventListener("keydown", event => {
+        if (event.key === "Enter" && !event.isComposing) addLinkText();
+      });
+    }
 
     els.floatingToolbar.addEventListener("pointerdown", event => event.stopPropagation());
     els.floatingToolbar.addEventListener("click", event => event.stopPropagation());
@@ -2039,14 +2271,15 @@
       zoomBy(event.deltaY > 0 ? .92 : 1.08);
     }, { passive: false });
     window.addEventListener("keydown", event => {
-      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "z" && !event.shiftKey) {
+      const typingText = document.activeElement && document.activeElement.matches('input[type="url"], input[type="text"]');
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "z" && !event.shiftKey && !typingText) {
         event.preventDefault();
         undo();
         return;
       }
       const item = selectedItem();
-      const editingNumber = selectedInputs.includes(document.activeElement);
-      if (!item || editingNumber) return;
+      const editingField = document.activeElement && document.activeElement.matches("input, select, textarea");
+      if (!item || editingField) return;
       if (event.key === "Delete" || event.key === "Backspace") {
         event.preventDefault();
         deleteSelected();
